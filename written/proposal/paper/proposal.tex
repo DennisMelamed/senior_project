@@ -1,0 +1,182 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}   %May be necessary if you want to color links
+\usepackage{hyperref}
+\usepackage{setspace}
+\doublespacing
+\hypersetup{
+    colorlinks=true, %set true if you want colored links
+    linktoc=all,     %set to all if you want both sections and subsections linked
+    linkcolor=blue,  %choose some color if you want links to stand out
+}
+\usepackage{graphicx}
+\graphicspath{ {../../images/} }
+\setlength{\belowcaptionskip}{-10pt}
+\setlength{\abovecaptionskip}{-10pt}
+\begin{document}
+
+%a) Title Page - Project title, project adviser, semester, and year.
+\begin{titlepage}
+	\begin{center}
+		\vspace{20pt}
+		{\bf \LARGE Indoor Micro-UAV Navigation with Minimal Sensing} \\
+		\vspace{200pt}
+		Dennis Melamed\footnote{University of Minnesota, Department of Electrical and Computer Engineering} \\
+		Advisers: Professor Volkan Isler\footnote{University of Minnesota, Department of Computer Science and Engineering} \& Professor Derya Aksaray\footnote{University of Minnesota, Department of Aerospace Engineering and Mechanics} \\
+		Project Proposal for Senior Honors Design Project (EE 4981H)\\
+		Fall 2018 \\
+	\end{center}
+\end{titlepage}
+
+
+%b) Abstract - One-paragraph summary (100-200 words) of what the project is about.
+\begin{abstract}
+The usage of a small UAV with minimal sensing abilities to navigate complex indoor environments outside a motion capture system has not been well explored. This work proposes to develop a framework to fly out the door of a room from a random initial location using a micro-UAV with low-accuracy sensors. The sensing abilities will be limited by the payload of the UAV to a low-resolution gray-scale camera and a low-accuracy IMU. The framework will consist of several interacting components: door detection (by a simple Hough transform procedure or a convolutional neural network), flight planning (via dead reckoning, a recurrent neural network, or a reinforcement learning network), and a lower level flight controller. Each proposed method will be tested and compared against other solutions in simulation and in real life.
+\end{abstract}
+
+%c) Table of Contents - List and page numbers of the different sections.
+\tableofcontents
+
+%d) List of Figures - Figure numbers, figure captions, and page numbers.
+\listoffigures
+
+%e) Introduction – An overview of the proposed project and an explanation of its importance.
+%Done, not edited
+\section{Introduction}
+Most current work in the field of autonomous unmanned aerial vehicles (UAVs) uses well-known localization systems such as GPS, motion capture systems, or on-board sensor fusion to determine the UAV's position and orientation. While these systems are reasonable in certain situations, they each have key drawbacks. GPS devices are heavy and can be inaccurate by several meters depending on the location and model of GPS. Motion capture systems are expensive to install and only allow localization within a small area. Sensor fusion on-board the UAV runs into the same problems as GPS, with accuracy often being relatively poor depending on the environment and sensors used. Weight is an additional concern, as cameras and others sensors sufficient to give good sensor fusion can often weigh more than the payload of the UAV. Due to these issues, it is desirable to find a way a lightweight UAV could move through the world without relying on the above systems to give it its precise location. The applications of such a micro-UAV might include plumbing inspection, agricultural inspection within trees, and indoor security monitoring. This project proposes to develop such a platform and create software for a first step in the complete ability to navigate without the above systems: flying through a doorway. This is a key task in navigating indoors where the most constrained space for a UAV to fly through, and thus the most likely for a crash, might be a doorway. The platform selected for this project is a Crazyflie micro-UAV, a low-cost, durable, and open source platform which weighs 27 grams. The proposed sensing package includes the onboard inertial measurement unit (IMU) and a lightweight camera designed for first-person view (FPV) drone racing. Neither of these sensors are very accurate due to their small size and low cost. While the proposed task seems simple to a human, the UAV without the ability to completely localize itself must go through several software steps in order to safely fly through the door. Detecting a door is the first step. This will require running either a Hough transform-based method or a convolutional neural network on the camera feed coming from the UAV. These methods will take in the camera image and output a set of coordinates in the image plane marking where the door is located. Once the door has been localized, the UAV must take off and respond to roll, pitch, yaw, and thrust set points. This may be pre-implemented, or, if the existing software is determined to not be robust enough, designed from the ground up. Once airborne, path planning software must determine which direction to fly in order to make it through the door. It will then produce a set of desired orientations the UAV should achieve in order to successfully fly through the door. While IMUs do provide information about the orientation of the UAV, they are known to drift and produce inaccurate orientations. This factor might be mitigated by planning short paths where the IMU does not have enough time to drift. Path planning may be achieved via a dead reckoning system, a recurrent neural network, or a reinforcement learning framework. The flowchart in Figure \ref{flowchart} shows the proposed development steps described above, as well as indicates the problems they aim to solve.
+
+\begin{figure}
+	\centering
+	\includegraphics[scale=.55]{flowchart}
+	\vspace{10pt}
+	\caption[Flowchart of Proposed Development Stages]{Flowchart of Proposed Development Stages}
+	\label{flowchart}
+\end{figure}
+
+%f) Background – A summary of the previous work on the subject.
+\section{Background}
+Previous work in this area falls into a few broad categories. Detection of doors in camera images has been studied in multiple works and is a key initial step in flying through a door. Work in this category includes the detection of elevator doors by JunYoung and Lee \cite{ElevatorDoors} using stereo vision. While the current project will not use stereo vision, the corner detection JunYoung and Lee propose is used in later works. A more relevant publication is Mu\~noz-Salinaz et al.\cite{Fuzzy}, which used fuzzy logic to successfully detect doors using the edges present in an image including when the door is not completely visible. Tian \cite{Tian2013} attempts to expand on this concept and uses the detection of frame corners and edges to indicate a door, along with the heuristic that doors tend to be inset in the wall, while objects similar to doors such as wardrobes tend to extend out from wall. While this is useful for higher resolution cameras, the low accuracy of the camera proposed for this project may lead to an inability to extract enough corners and edges to determine if something is inset or standing out. Llopart, Ravn, and Andersen\cite{NNDoor} use a convolutional neural network to detect doors and cabinets. The network is trained to place a bounding box around any doors in a camera's image. The results show success, however, do not directly translate to the problem domain proposed here due to the color nature of the camera images, the high resolution of the camera, and the stationary nature of the camera in their work.
+
+
+Indoor navigation of UAVs is a well-researched field. Most research focuses on either UAVs big enough to hold higher-accuracy sensors, or systems where the UAV is localized using motion capture setups such as VICON. Sanket et al. \cite{gapflyt} makes use of a UAV over ten times the weight of the Crazyflie to detect gaps and fly through them using Temporally Stacked Spatial Parallax, a gap detection method, and a high resolution camera-based approach. Their method is very successful for irregular gaps and proposes the use of a ``safe point'' that is chosen as the location to fly through the gap, calculated to ensure that the UAV will fit through the gap. Riviere, Manecy, and Viollete\cite{Folding} use a micro-UAV shaped like an `H' which is able to fold the H's uprights to form a flat body more able to fit through small gaps. A motion capture system is used to localize and control the UAV in this case. Horvath, Zentai, and Jenak\cite{PCNav} attempt to solve the problem of indoor navigation using a laser scanner capable of generating a three-dimensional point cloud combined with camera images. Their results are good for large spaces and varied environments but rely on the use of heavy sensors. Barrows\cite{crazyflie_centeye} uses new, extremely small-scale stereo optical flow sensors to detect objects and maintain position without an external localization system. The hardware is not available commercially, and the work does not indicate that these sensors can be used to actually navigate, as opposed to simply hold position or avoid obstacles. 
+
+%g) Proposed Project – Expected procedures, experiments, goals, and technical details of your approach.
+%%mention posibility of combinging methods to provide better results%%
+\section{Proposed Project}
+\subsection{Hardware and Pre-existing Software}
+The UAV selected for this project is the Crazyflie micro-UAV, shown in Figure \ref{crazyflie_image}. Developed by Seeed Studios, it has a built-in IMU and a 15 gram payload. This payload will consist of an FPV camera weighing 5.6 grams manufactured by RunCam, shown in Figure \ref{crazyflie_cam}. This device has a global shutter which negates the distortion caused by rolling shutter cameras. Under rapid motion, rolling shutter cameras produce very distorted images because they scan line by line. The top of the image is captured at a different time and location from the bottom, producing undesirable smudging of objects in the image. The global shutter avoids this effect. An analog video transmitter and a battery to power the camera/transmitter combination will form the rest of the payload. Combined with the UAV's battery, the weight of the payload may cause undesirable effects on the flight stability of the UAV even if under the rated 15 gram payload. The stock UAV battery may be swapped out for a smaller one if this is determined to be the case.
+
+In order to provide ground truth to test against, a motion capture system developed by VICON will be used. By placing lightweight plastic balls in unique configurations on the UAV, the system can track the full three-dimensional poses of the UAV to an extremely high degree of precision using many cameras. This will be used as a ground truth source and as a next step after simulations to verify that a portion of the algorithm works reasonably. For example, the door-detection methods can be run during flight without the non-external navigation software being written. In this way, the development of individual parts of the project can be decoupled from each other. The UAV will communicate to the ground station (a basic laptop) through two radio links: a two-way link for UAV commands and basic sensor data streams and a separate link for camera image data to reduce latency on both links.
+
+\begin{figure}
+	\centering
+	\includegraphics[scale=1.7]{crazyflie_new}
+	\caption[The Crazyflie micro-UAV]{The Crazyflie micro-UAV}
+	\vspace{8pt}
+	\small Source: \url{https://www.bitcraze.io/crazyflie-2/}
+	\label{crazyflie_image}
+\end{figure}
+
+
+
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.3]{micro-swift-size}
+	\caption[The RunCam Micro Swift Camera]{The RunCam Micro Swift Camera}
+	\vspace{8pt}
+	\small Source: \url{https://shop.runcam.com/runcam-micro-swift/}
+	\label{crazyflie_cam}
+\end{figure}
+
+In order to control the UAV, the Robotic Operating System (ROS) will be used. ROS allows communication between running processes creating greater modularity in code. Processes become ROS nodes which each can handle a different aspect of robotic control. A node for interacting with the Crazyflie, called \verb|crazyflie_ros|\cite{crazyflie_ros}, exists and implements several important features. It allows complete waypoint navigation of the UAV when used with a motion capture system to localize the UAV, and generally handles much of the low level UAV control. Without a motion capture system, the node uses the onboard IMU and motor PWM frequencies to respond to pitch, roll, yaw, and thrust level commands from other ROS nodes.
+
+The camera attached to the UAV will be forward facing with the lens pointing out along the UAV's x-axis. The camera-UAV transform will have to be calibrated for more precise measurements due to the impossibility of perfect camera mounting by a human. Given the assumption of the IMU as the ``center'' of the UAV, which for the Crazyflie is sufficiently close to true, the motion of the camera and the IMU can be correlated to determine how they are related spatially. This can be done with Kalibr\cite{Kalibr}, a calibration toolbox developed by ETH Zurich.
+
+In order to speed development and allow verification of code in a safe and easy way, code will first be tested in simulation where possible. The environment chosen for this is the Virtual Robotics Experimentation Platform, or V-REP, developed by Coppelia Robotics. A room with a door will be created in simulation, along with a UAV matching as closely as possible the characteristics of the Crazyflie. The ROS interface provided by V-REP will be used to send commands in a format identical to what \verb|crazyflie_ros| expects, and will output IMU and camera data in the same format as \verb|crazyflie_ros| does as well. In order to replicate the real-life environment more precisely, the IMU data generated by V-REP will have artificial noise added to it, and the camera data will be lowered in resolution and converted to gray-scale. Both data streams will have delays associated with them as well in order to mimic the latency of the data links in real life. Functionality usually provided by a motion capture system, such as precise localization of a target object, is easily achieved in the simulation and can be output in the same format as the motion capture system does.
+
+\subsection{Externally Localized Flight}
+The first part of the project will focus on ensuring the stability of the UAV's flight and doing initial setup of systems. Initially, a simulation will be set up which broadcasts the location of the UAV and door in a common reference frame. A pre-implemented node will be used to run waypoint navigation through the door using these broadcast locations, which will be used as the ground truth for how the UAV will fly. The same node will be used to fly in the motion capture system, since the system provides the same location broadcasts as the simulation. Success in this stage is defined by safely flying through the doorframe and landing while not running out of battery mid-flight. 
+
+\subsection{Image Based Door Detection + Externally Localized Flight}
+In the next portion of work, the need to automatically detect where the door is using the UAV camera, not the motion capture system, will be explored. While in the previous section the door had trackers placed on its frame to allow the motion capture system to detect its location in real time, a ROS node will be written in this section which is able to determine where in the UAV's camera image it thinks a door is visible. The door must be correctly identified with a high success rate in order to make the entire project succeed. It must perform this correct identification under many environments, as the door will not always be placed directly in front of the UAV with a clear distinction between door and surrounding wall. The door might appear very different due to the UAV's perspective and could be only partially visible during some stages of the UAV's flight, such as when it approaches very close to the door. Door detection could be done in multiple ways, and each will be tested in order to see what is most accurate and successful. The possibilities are a simple Hough transform-based technique and a machine learning technique.
+
+\subsubsection{Hough Transform-Based Method}
+The Hough transform-based method has the possibility of being the most robust of the techniques, as the program flow can be easily followed and modified by a human. The camera image, once received, would first be converted to gray scale. After Gaussian blurring and adaptive thresholding the image, possibly a number of times, the image would be converted into the Hough space. To do this, each pixel in the image which a simple edge detector selects will have several lines associated with it, specifically ones which are firstly perpendicular to rays leaving the image origin and secondly pass through the point. A ``vote'' for this associated line will be recorded. The lines with a number of votes above a threshold will be selected as lines in the image. Lines which are relatively parallel (within a small angle of each other) will be grouped together, and parallel pairs which intersect each other will be selected as possible doors. The largest of the quadrangles formed by a set of intersecting line pairs will be chosen as the door, and the center of it selected as the target for flight. Additional heuristics may be explored for selecting which rectangle forms the door, including some which make use of perspective-invariant qualities of rectangles. This approach suffers from the fact that this process might be easily fooled by the UAV flying in such a way as it cannot see the door anymore. In this case it would select the largest rectangle it sees, for example a picture frame, leading to an incorrect flight target. Additionally, objects visible through the doorframe might cause the algorithm to divide the rectangle of the door frame into multiple parts which may not be grouped correctly into the doorframe, leading to an incorrect or complete lack of a flight target during portions of flight. 
+
+\subsubsection{Fully-Convolutional Neural Network Method}
+A final option is to train a neural network to segment a door out of an image. The most popular architecture for this type of neural network is a fully-convolutional net (FCN), which after training is capable of identifying the pixels in an image which belong to a certain class of object. This is known as segmenting the image. FCNs use an encoder-decoder structure to classify objects in a convolutional space and then extract their spatial location from this space. The network would be built using Python's TensorFlow library for neural networks. In order to train the network, datasets of scenes with doors labeled pixel-wise by a human from MIT's CSAIL \cite{csail_data_2}\cite{csail_data_1}would be used. Once designed and trained, the FCN would output the pixels it considers to be doors, and the center of these pixels would be used as the target for flight. The machine learning approach may fail due to low camera resolution compared to the images it was trained on, since there may be a significant difference in quality. This might be alleviated by introducing artificial noise and low quality to the training set, but due to the non-human readable nature of neural networks very little can be done to fix a network that is segmenting poorly other than trying to retrain. This issue is, however, present in the other approaches as well so this technique is not necessarily at a significant disadvantage. The issue of objects being visible through the doorframe causing segmentation problems is also present in this approach.
+
+\subsubsection{Comparison Techniques and Other Considerations}
+Since with a single camera it is impossible to estimate the distance to the door, the center of the detection rectangle in the image would simply provide a unit vector in the direction the UAV should fly in the camera's frame of reference. By using the camera-UAV transform determined previously, the UAV would then be able to determine the direction it should travel to make it through the door by chaining transforms. Success in this stage is defined as one of the methods compared achieving an intersection over union score of greater than 0.8. In order to calculate this score and compare the different methods, several sample videos will be taken of a door with the UAV's camera. The videos will be hand-annotated with the correct location of the door in each frame. The detection results of each method will then be compared frame by frame with the annotated ground truth. The intersection-over-union score:
+$$
+IoU = \frac{AreaOfOverlapBetweenDetections}{AreaOfUnionOfDetections}
+$$
+
+will be calculated for each frame between the ground truth detection and the specific method's detection. The average of these scores will be taken as the method's score. The most successful of the door-detection techniques will be used in the next portion of the work.
+
+\subsection{Image Based Door Detection + Independent Flight}
+The final portion of the work will remove the motion capture system entirely from the equation, requiring the UAV to fly without outside knowledge of its orientation and location. In place of the motion capture system, the onboard IMU and camera will be used to both keep the UAV stable and provide information about how the UAV is currently flying. A series of pitch, roll, yaw, and thrust commands will be generated constantly, and the UAV will need to execute them with feedback from the sensors to fly through the door. The motion capture system will likely still be used as a safety backup and ground truth, but this information will not be fed into the nodes used by the UAV for any task. Three different systems will be developed and tested to see their effectiveness at successfully having the UAV fly through the door. The first is a simple technique where the UAV simply tries to fly open-loop towards the door. The second is a recurrent neural network (RNN) technique, which has several variations but will use the IMU output, the camera image, and possibly the detected center of the door to generate a stream of commands after having been trained. Finally, a reinforcement learning (RL) system is proposed which will use a multi-factor metric as a reward signal to train a neural network to generate the command sets. 
+
+\subsubsection{Dead Reckoning}
+The first approach will be a dead-reckoning system, which initially will have access to the position of the door and the UAV's initial location from the motion capture system. After taking off and beginning to fly toward the door, it will attempt to correct any drift that occurs by using the motion of the door in the camera image as a measure of error. Corrections will be made to minimize the movement of the door in the image frame, thus leading to the UAV flying through the door as long as it is flying towards the door initially. This method will depend on getting a consistent detection throughout the flight. After successfully flying through the door with this method, the access to the initial UAV and door positions will be removed from the algorithm. The direction of initial flight will now have to come only from the door detection. The same correction method will be used to achieve stable flight as before.
+
+\subsubsection{Recurrent Neural Network}
+The second approach uses an RNN trained to navigate through the door using simulation and afterwards the motion capture system to provide ground truth using methods described by Kelchtermans and Tuyelaars\cite{RNNTraining}. The RNN will be built using Python's Tensorflow library. An RNN is a good choice for this task since it has some level of memory, allowing it to handle velocities during flight. Using the flight method described in the initial section on externally localized flight, the UAV will be flown repeatedly in simulation from random starting locations with various door configurations. The RNN will train based on the IMU and camera data generated during these flights. Tests will then be performed on how well the network is able to provide correct command sets to the simulated UAV so that it flies through the door. Several variations are proposed. One uses the unmodified camera feed to train the network. Another instead uses the results of one of the door detection algorithms as the input instead of full camera images. Finally, the output of the network may be designed to select an action out of a limited, discretized action space instead of outputting a continuous set of roll, pitch, yaw, thrust UAV control inputs. These discretized actions may be things such as ``increase thrust by a factor of 2'' or ``fly to the right.'' If these tests are successful, the same network will be re-trained with the real UAV, using the motion capture system to do the ground truth control of the UAV. Ideally the network will not have to be entirely retrained, only modified to deal with the real-life dynamics of the Crazyflie, what the test door looks like, and the real-life IMU.
+
+\subsubsection{Reinforcement Learning Neural Network}
+An RL framework approach will also be attempted in order to fly the UAV without any outside source of information such as the motion capture system. In order to train an RL network, a reward signal is needed which allows the network to infer how well it is performing without supervision. The proposed signal is a weighted sum of how close to the door the UAV is ($D$), how within a reasonable range the current UAV pose is, i.e. the UAV is not upside down, ($R$), how close it is to obstacles such as the ground, walls, and doorframe ($O$), and possibly other factors. The higher the reward signal, the better the network is performing. The signal might take the form of something like:
+$$
+Reward = K_{1}/D + K_{2}*R + K_{3}*O + K_{n}*OtherFactors
+$$
+
+Using a framework such as Google's Dopamine\cite{Dopamine}, the RL network will be trained similarly to the RNN in simulation. A node which calculates the reward signal will be created and the network designed to use the IMU and camera data to predict the command set inputs. The flight of the UAV will again be simulated repeatedly. However, there will be no ground truth being provided to teach the network by the simulation. Instead, it will attempt to maximize its reward signal through different actions. Eventually this should lead to a network which is able to successfully navigate through the door. If successful, the same technique will be used in real life with the motion capture system. The data from the motion capture system will be used to generate the reward signal. Ideally the network will be mostly trained in simulation and only require a small re-learning period in real life, in order to minimize the number of flights that have to be set up by hand. 
+
+\subsubsection{Comparison Techniques and Other Considerations}
+Upon developing, testing, and comparing these three systems, the best will be chosen. Success in this stage will indicate the goals of the entire project being achieved, with the UAV able to start from a random initial location, detect and fly through the door, then land safely on the other side. The methods proposed will be compared in simulation first. Each will be run 100 times in simulation with a random initial location. The number of times the method succeeds in flying the UAV through the door, defined as traveling through the doorframe and landing with the propellers facing up, will be used as the method's score. In real life a similar comparison will be run. The most successful method will be the one that has the highest score in real life. Success for this project will be defined as a less than 20\% failure rate for flying through the door with at least one of the methods mentioned in this section. 
+
+
+
+%h) Budget - Funds needed to perform the studies.
+\section{Budget}
+A twenty (20) dollar budget is needed to build the physical doorframe which the UAV will fly through when flying within the motion capture system. 
+%i) Timeline – Your best estimate of when you will complete the major tasks for the project.
+%Done, not edited
+\section{Timeline}
+\begin{itemize}
+	\item Sep 17 - Simulation setup completed
+	\item Sep 29 - UAV calibration complete
+	\item Oct 08 - Project Proposal complete and submitted
+	\item Oct 15 - Initial full motion capture setup and successful test flight with human control
+	\item Oct 19 - Full external localization navigation node written and tested in simulation
+	\item Oct 25 - Full external localization navigation node tested in real life
+	\item Nov 02 - Hough transform based door-detection node written and tested in simulation and real life
+	\item Nov 30 - FCN door-detection node written and tested in simulation and real life
+	\item Dec 12 - Full comparison run between door-detection nodes, best one determined 
+	\item Jan 30 - Dead reckoning navigation node written and tested in simulation and real life
+	\item Feb 01 - Progress Update complete and submitted
+	\item Feb 28 - RNN navigation node written and tested in simulation and real life
+	\item Mar 30 - RL navigation node written and tested in simulation and real life
+	\item Apr 05 - Navigation nodes compared and best one selected
+	\item Apr 29 - Project complete
+	\item May 10 - Project Report complete and submitted
+\end{itemize}
+
+%j) Conclusion/Summary – A succinct summary of your proposed project.
+\section{Conclusion}
+In conclusion, this project seeks to explore the applicability of various techniques and approaches to indoor navigation by very small UAVs. To do this, a specific problem is defined: navigating from a random initial position through a doorway and landing safely on the other side. The sensing package defined is purposely limited to low-cost, low-quality, and relatively high-latency sensors on an extremely small platform in order to explore how navigation and motion might be controlled in extremely limited environments. To this end, a Crazyflie micro-UAV with a low-resolution camera is selected as the platform for experiments. To complete the task, several discrete pieces of software will be written, and connected through the Robotic Operating System. The first is a door-detection algorithm. Several options for this algorithm will be explored, including a simple Hough transform-based algorithm and a fully-convolutional neural network. Next, a way to navigate without any external localization systems will be written. This will likely depend on the IMU internal to the UAV and possibly on the camera image. Several options for this will also be developed and tested against one another, including a simple dead reckoning system, a recurrent neural network, and a reinforcement learning network. To speed development, each of the above steps will first be implemented in a V-REP simulation. Once they are successful in simulation, the software nodes written will be transferred to the real life system, which will be flown in an environment monitorable by a motion capture system. This system will allow training of algorithms that require a ground truth, and also act as a safety net, stopping the flight of the UAV if it is determined to be out of control.
+%k) List of References - Numbered list of references that must include for each reference: authors, title,
+%name of the source (e.g. conference, journal, etc.), and date of the publication. You should use the
+%citation format that is standard for the primary journals in your specific field of research.
+\bibliographystyle{plain}
+\bibliography{../../references}
+
+%Written project proposals are typically about 10 to 12 double-spaced pages in length for the main text
+%and figures, but excluding the title page, abstract, table of contents, list of figures, budget, timeline, and
+%references. They should be in 12-point font with one-inch margins. Introduction(1) + Background(1.5) + Proposed Project(7) + Conclusion(1) is 10-12 pages
+
+
+%The oral project proposal presentation will give you the opportunity to describe your ideas and to show
+%the soundness of your proposed approach to your peers, your project advisor, and the course coordinator.
+%This presentation should include all of the above components. Your project proposal presentation should
+%be 10 to 12 minutes long, followed by 3 minutes for Q&A.
+\end{document}
